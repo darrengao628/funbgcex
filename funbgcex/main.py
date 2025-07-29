@@ -5,6 +5,7 @@ import argparse
 import os
 import sys
 from funbgcex.BGCeXtractor import BGCeXtractor
+from funbgcex.gbkgen_files.genebank_generater import main as gbkgen_main
 
 
 def get_args():
@@ -40,7 +41,21 @@ def main():
     min_identity = args.min_identity
 
     if os.path.isdir(gbk_dir) == False:
-        sys.exit("The input directory does not exist.")
+        # Check if it's a file instead (for FASTA input)
+        if os.path.isfile(gbk_dir) and gbk_dir.endswith(('.fasta', '.fa')):
+            # Create a temporary directory for the converted GenBank file
+            temp_dir = os.path.join(os.path.dirname(results_dir), f"temp_{os.path.splitext(os.path.basename(gbk_dir))[0]}")
+            os.makedirs(temp_dir, exist_ok=True)
+            
+            # Convert FASTA to GenBank using gbkgen
+            output_gbk = os.path.join(temp_dir, os.path.splitext(os.path.basename(gbk_dir))[0] + ".gbk")
+            gbkgen_main([gbk_dir, "-o", output_gbk])
+            
+            # Update gbk_dir to point to the directory containing the converted file
+            gbk_dir = temp_dir
+        else:
+            sys.exit("The input directory does not exist.")
+    
     if mode == "all":
         query = "none"
     elif mode == "target":

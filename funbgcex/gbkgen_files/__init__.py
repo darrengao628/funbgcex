@@ -1,0 +1,1 @@
+# This file makes gbkgen_files a Python package

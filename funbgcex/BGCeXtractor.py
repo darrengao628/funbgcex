@@ -18,6 +18,13 @@ from funbgcex.SimilarBGCfinder import MakeProtBGCidDict
 
 def BGCeXtractor(gbk_dir,results_dir,mode,query,gap_allowed,max_bgc_gap,min_prot_len,num_of_genes_checked,min_identity):
     current_dir = os.path.dirname(os.path.abspath(__file__))
+    
+    # Check if gbk_dir is a temporary directory created for FASTA conversion
+    if os.path.basename(gbk_dir).startswith("temp_"):
+        # Clean up temporary directory after processing
+        cleanup_temp_dir = True
+    else:
+        cleanup_temp_dir = False
 
     """
     Create dictionaries
@@ -397,3 +404,17 @@ def BGCeXtractor(gbk_dir,results_dir,mode,query,gap_allowed,max_bgc_gap,min_prot
 
 
     logger.info("All BGC extractions completed")
+    
+    # Copy GenBank file to output directory if it was created for FASTA conversion
+    if cleanup_temp_dir:
+        # Find the GenBank file in the temporary directory
+        gbk_files = glob.glob(f"{gbk_dir}/*.gbk")
+        if gbk_files:
+            # Copy the GenBank file to the output directory
+            for gbk_file in gbk_files:
+                shutil.copy2(gbk_file, results_dir)
+                logger.info(f"Copied GenBank file to output directory: {os.path.join(results_dir, os.path.basename(gbk_file))}")
+        
+        # Clean up temporary directory
+        shutil.rmtree(gbk_dir)
+        logger.debug(f"Cleaned up temporary directory: {gbk_dir}")
