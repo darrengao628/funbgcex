@@ -20,6 +20,9 @@ def get_args():
     parser.add_argument("-ml","--min_length",default=200,help="Minimum protein length considered for biosynthetic protein detection (Default: 200)",type=int)
     parser.add_argument("-n","--num_checked",default=20,help="Number of genes around the core/target genes to be checked (Default: 20)",type=int)
     parser.add_argument("-mi","--min_identity",default=50,help="Minimum identity required to be considered as a duplicated protein (Default: 50)",type=int)
+    parser.add_argument("-w","--workers",default=None,help="Number of worker processes for parallel processing (Default: auto-detect based on CPU cores)",type=int)
+    parser.add_argument("--max-memory",default=None,help="Maximum memory usage in GB (Default: no limit)",type=float)
+    parser.add_argument("--no-parallel",action="store_true",help="Disable parallel processing (use original sequential approach)")
     parser.add_argument("-v","--version",action="version",version='%(prog)s 0.0.7')
     args = parser.parse_args()
     return(args)
@@ -39,6 +42,9 @@ def main():
     min_prot_len = args.min_length
     num_of_genes_checked = args.num_checked
     min_identity = args.min_identity
+    workers = args.workers
+    max_memory = args.max_memory
+    no_parallel = args.no_parallel
 
     if os.path.isdir(gbk_dir) == False:
         # Check if it's a file instead (for FASTA input)
@@ -96,7 +102,7 @@ def main():
     """
     Start BGC extraction
     """
-    BGCeXtractor(gbk_dir,results_dir,mode,query,gap_allowed,max_bgc_gap,min_prot_len,num_of_genes_checked,min_identity)
+    BGCeXtractor(gbk_dir,results_dir,mode,query,gap_allowed,max_bgc_gap,min_prot_len,num_of_genes_checked,min_identity,workers,max_memory,no_parallel)
 
 
 if __name__ == "__main__":
