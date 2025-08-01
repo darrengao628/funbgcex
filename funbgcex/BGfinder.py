@@ -21,7 +21,8 @@ from funbgcex.SimilarBGCfinder import *
 
 
 
-def LinkChecker(seq1,seq2,database,protCSV,temp_dir):
+def LinkChecker(seq1,seq2,database,protJSON,temp_dir):
+    import json
     current_dir = os.path.dirname(os.path.abspath(__file__))
     isLinked = False
 
@@ -43,7 +44,9 @@ def LinkChecker(seq1,seq2,database,protCSV,temp_dir):
     Analyze DIAMOND result
     """
     BGClist = []
-    df = pd.read_csv(protCSV,index_col=[1])
+    with open(protJSON, 'r') as json_file:
+        protein_data = json.load(json_file)
+    
     blast_records = NCBIXML.parse(open(dmnd_result))
     for blast_record in blast_records:
         BGCsublist = []
@@ -51,7 +54,7 @@ def LinkChecker(seq1,seq2,database,protCSV,temp_dir):
             for hsp in alignment.hsps:
                 query = blast_record.query
                 blast_hit = alignment.title.replace(" ","")
-                BGCno = df.at[blast_hit,"FBGC or FPROT ID"]
+                BGCno = protein_data[blast_hit]["FBGC or FPROT ID"]
             BGCsublist.append(BGCno)
         BGClist.append(BGCsublist)
     if len(BGClist[0]) > len(BGClist[1]):
@@ -63,7 +66,7 @@ def LinkChecker(seq1,seq2,database,protCSV,temp_dir):
         for i in range(len(BGClist[0])):
             if BGClist[0][i] in BGClist[1]:
                 isLinked = True
-                break  
+                break
                 
     shutil.rmtree(temp_dir)
 
@@ -380,9 +383,12 @@ def AddPfam(hmmscan_result,df,SMhmm):
 
 
 def AddHomologue(blastp_result,df):
+    import json
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    prot_csv = f"{current_dir}/data/proteins.csv"
-    prot_df = pd.read_csv(prot_csv,index_col=[1])
+    prot_json = f"{current_dir}/data/proteins_indexed.json"
+    with open(prot_json, 'r') as json_file:
+        protein_data = json.load(json_file)
+    
     df["known_homologue"] = "none"
     df["known_homologue_identity"] = "none"
     df["known_homologue full name"] = "none"
@@ -403,12 +409,12 @@ def AddHomologue(blastp_result,df):
                     query_indices = df.index[df["locus_tag"] == query]
                     i = query_indices[0]
                     df.at[i,"BP"] = 1
-                    df.at[i,"known_homologue"] = prot_df.at[blast_hit,"protein"].split(" ")[-1]
+                    df.at[i,"known_homologue"] = protein_data[blast_hit]["protein"].split(" ")[-1]
                     df.at[i,"known_homologue_identity"] = identity
-                    df.at[i,"known_homologue full name"] = prot_df.at[blast_hit,"protein"]
-                    df.at[i,"known_homologue source"] = prot_df.at[blast_hit,"source"]
-                    df.at[i,"known_homologue metabolite"] = prot_df.at[blast_hit,"metabolite"]
-                    df.at[i,"known_homologue FBGC or FPROT ID"] = prot_df.at[blast_hit,"FBGC or FPROT ID"]
+                    df.at[i,"known_homologue full name"] = protein_data[blast_hit]["protein"]
+                    df.at[i,"known_homologue source"] = protein_data[blast_hit]["source"]
+                    df.at[i,"known_homologue metabolite"] = protein_data[blast_hit]["metabolite"]
+                    df.at[i,"known_homologue FBGC or FPROT ID"] = protein_data[blast_hit]["FBGC or FPROT ID"]
                     break
         except:
             pass
@@ -459,7 +465,7 @@ def DefineBoundary(mode,GBK_dir,BGC_dir,gap_allowed,min_prot_len,fungus_name,df,
 
     #For LinkChecker/SimilarBGCfinder
     database = f"{current_dir}/data/DIAMOND/fungal_SM_proteins"
-    protCSV = f"{current_dir}/data/proteins.csv"
+    protJSON = f"{current_dir}/data/proteins_indexed.json"
 
 
     BGCdf = pd.read_csv(cluster_csv,index_col=[0])
@@ -663,7 +669,7 @@ def DefineBoundary(mode,GBK_dir,BGC_dir,gap_allowed,min_prot_len,fungus_name,df,
                 Similarity check
                 """
                 logger.debug(f"Finding a similar BGC")
-                similarBGC = SimilarBGCfinder(bgc,database,protCSV,IDdict,GeneNumDict,MetabDict,temp_dir)
+                similarBGC = SimilarBGCfinder(bgc,database,protJSON,IDdict,GeneNumDict,MetabDict,temp_dir)
                 similarBGCid = similarBGC.bgc()
                 similarityScore = similarBGC.score()
                 similarMetab = similarBGC.metab()

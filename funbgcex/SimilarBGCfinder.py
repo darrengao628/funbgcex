@@ -11,16 +11,18 @@ from Bio import SeqIO
 from funbgcex.GeneralCommands import *
 
 
-def MakeProtBGCidDict(IDdict,GeneNumDict,MetabDict,proteinCSV):
+def MakeProtBGCidDict(IDdict,GeneNumDict,MetabDict,proteinJSON):
+	import json
 	BGClist = []
-	df = pd.read_csv(proteinCSV,index_col=[0])
-	for i in range(len(df)):
-		PROTid = df.at[i,"protein ID"]
-		BGCid = df.at[i,"FBGC or FPROT ID"]
+	with open(proteinJSON, 'r') as json_file:
+		protein_data = json.load(json_file)
+	
+	for PROTid, protein_info in protein_data.items():
+		BGCid = protein_info["FBGC or FPROT ID"]
 		IDdict[PROTid] = BGCid
 		if BGCid not in BGClist:
-			GeneNumDict[BGCid] = int(df.at[i,"gene number"])
-			MetabDict[BGCid] = df.at[i,"metabolite"]
+			GeneNumDict[BGCid] = int(protein_info["gene number"])
+			MetabDict[BGCid] = protein_info["metabolite"]
 			BGClist.append(BGCid)
 
 
@@ -203,12 +205,12 @@ def ClusteredProteinFinder(fasta_dir,database,IDdict,deletedProtDict,max_bgc_gap
 
 
 class SimilarBGCfinder:
-	def __init__(self,inputGBK,database,proteinCSV,IDdict,GeneNumDict,MetabDict,temp_dir):
+	def __init__(self,inputGBK,database,proteinJSON,IDdict,GeneNumDict,MetabDict,temp_dir):
 		os.makedirs(temp_dir,exist_ok=True)
 
 		self.inputGBK = inputGBK
 		self.database = database
-		self.proteinCSV = proteinCSV
+		self.proteinJSON = proteinJSON
 
 		"""
 		Extract CDSs
@@ -326,11 +328,11 @@ class SimilarBGCfinder:
 		shutil.rmtree(temp_dir)
 
 	def bgc(self):
-	    return self.similarBGC
+		return self.similarBGC
 
 	def score(self):
-	    return self.simlarity_score
+		return self.simlarity_score
 
 	def metab(self):
-	    return self.metabolite
+		return self.metabolite
 

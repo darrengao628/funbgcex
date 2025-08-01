@@ -18,81 +18,10 @@ from funbgcex.SeqHandling import *
 from funbgcex.BGfinder import *
 from funbgcex.HTMLgenerator import HTMLgenerator
 from funbgcex.SimilarBGCfinder import MakeProtBGCidDict
+from funbgcex.MemoryOptimizer import MemoryMonitor
 
 
-class MemoryMonitor:
-    """
-    Monitor memory usage and enforce limits.
-    """
-    def __init__(self, max_memory_gb=None, check_interval=5):
-        """
-        Initialize memory monitor.
-        
-        Args:
-            max_memory_gb: Maximum memory usage in GB (None for no limit)
-            check_interval: Interval in seconds between memory checks
-        """
-        self.max_memory_gb = max_memory_gb
-        self.check_interval = check_interval
-        self.process = psutil.Process()
-        self.initial_memory = psutil.virtual_memory().used / (1024**3)  # GB
-        self.monitoring = False
-        
-    def start_monitoring(self):
-        """Start memory monitoring in a separate thread."""
-        if self.max_memory_gb is not None:
-            self.monitoring = True
-            # In a real implementation, we would start a thread here
-            # For now, we'll just check memory at key points
-            
-    def stop_monitoring(self):
-        """Stop memory monitoring."""
-        self.monitoring = False
-        
-    def check_memory(self):
-        """
-        Check current memory usage.
-        
-        Returns:
-            Tuple of (current_usage_gb, percentage_of_max)
-        """
-        current_memory = psutil.virtual_memory().used / (1024**3)  # GB
-        if self.max_memory_gb is not None:
-            percentage = (current_memory / self.max_memory_gb) * 100
-        else:
-            percentage = 0
-        return current_memory, percentage
-        
-    def is_memory_exceeded(self):
-        """
-        Check if memory usage exceeds the limit.
-        
-        Returns:
-            True if memory usage exceeds the limit, False otherwise
-        """
-        if self.max_memory_gb is None:
-            return False
-            
-        current_memory, percentage = self.check_memory()
-        return percentage > 100
-        
-    def get_memory_info(self):
-        """
-        Get detailed memory information.
-        
-        Returns:
-            Dictionary with memory information
-        """
-        mem = psutil.virtual_memory()
-        return {
-            'total': mem.total / (1024**3),  # GB
-            'available': mem.available / (1024**3),  # GB
-            'used': mem.used / (1024**3),  # GB
-            'percent': mem.percent,
-            'initial': self.initial_memory,
-            'current': mem.used / (1024**3),
-            'max_limit': self.max_memory_gb
-        }
+# Using the enhanced MemoryMonitor from MemoryOptimizer module
 
 
 def get_optimal_worker_count(requested_workers=None, max_memory_gb=None, min_workers=1, reserve_cores=1):
@@ -519,8 +448,8 @@ def BGCeXtractor(gbk_dir,results_dir,mode,query,gap_allowed,max_bgc_gap,min_prot
     IDdict = {}
     GeneNumDict = {}
     MetabDict = {}
-    protCSV = f"{current_dir}/data/proteins.csv"
-    MakeProtBGCidDict(IDdict,GeneNumDict,MetabDict,protCSV)
+    protJSON = f"{current_dir}/data/proteins_indexed.json"
+    MakeProtBGCidDict(IDdict,GeneNumDict,MetabDict,protJSON)
 
     """
     Create output directory
